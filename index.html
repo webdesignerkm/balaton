@@ -18,7 +18,6 @@
 
     <script>
         // A Te méréseid alapján számolt "kifeszített" határok
-        // Ezek azok a pontok, amikre a te SVG-d (0,0) és (2534,1436) sarkai esnek
         var northWest = [47.1050, 17.1500];
         var southEast = [46.6600, 18.1450];
         var bounds = [northWest, southEast];
@@ -28,27 +27,38 @@
             zoomSnap: 0.1
         }).fitBounds(bounds);
 
-        // Az SVG réteg
+        // Az SVG réteg betöltése
         L.imageOverlay('balaton.svg', bounds).addTo(map);
 
-        // Saját pozíció marker
-        var marker = L.circleMarker([0,0], {
-            radius: 9, fillColor: "#00ff00", color: "#fff", weight: 3, fillOpacity: 1
+        // FIX POZÍCIÓ BEÁLLÍTÁSA (Siófok, Aranypart/Móló környéke)
+        // Ezt a koordinátát írd át, ha máshol szeretnél "állni" a teszthez
+        var fixLat = 46.9140; 
+        var fixLon = 18.0510;
+
+        // Saját pozíció marker létrehozása a fix helyen
+        var marker = L.circleMarker([fixLat, fixLon], {
+            radius: 9, 
+            fillColor: "#ff0000", // Pirosra állítottam, hogy jobban lásd a teszt alatt
+            color: "#fff", 
+            weight: 3, 
+            fillOpacity: 1
         }).addTo(map);
 
-        // Helymeghatározás frissítése
-        map.locate({setView: false, watch: true, enableHighAccuracy: true});
+        // A HUD kijelzőt is frissítjük a fix adatokkal
+        document.getElementById('hud').innerHTML = 
+            "TESZT MÓD (FIX)<br>" +
+            "LAT: " + fixLat.toFixed(5) + "<br>" +
+            "LON: " + fixLon.toFixed(5);
 
-        map.on('locationfound', function(e) {
-            marker.setLatLng(e.latlng);
-            document.getElementById('hud').innerHTML = 
-                "LAT: " + e.latlng.lat.toFixed(5) + "<br>" +
-                "LON: " + e.latlng.lng.toFixed(5);
-        });
+        // A térképet is oda fókuszáljuk, hogy ne kelljen keresgélni
+        map.setView([fixLat, fixLon], 16);
 
-        // Debug mód: Kattints és írd be az Illustratorba az eredményt az ellenőrzéshez
+        // Debug mód: Kattints és írd be az Illustratorba az eredményt
         map.on('click', function(e) {
-            console.log("GPS ide: " + e.latlng.lat + ", " + e.latlng.lng);
+            console.log("Kattintott hely GPS-e: " + e.latlng.lat + ", " + e.latlng.lng);
+            // Ha rákattintasz valahova, a piros pötty oda ugrik (könnyebb tesztelés)
+            marker.setLatLng(e.latlng);
+            document.getElementById('hud').innerHTML = "KATTINTOTT:<br>LAT: " + e.latlng.lat.toFixed(5) + "<br>LON: " + e.latlng.lng.toFixed(5);
         });
     </script>
 </body>
