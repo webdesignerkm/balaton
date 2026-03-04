@@ -22,7 +22,7 @@
     <div id="map"></div>
 
    <script>
-        // Az SVG határai (maradnak a korábbiak, amíg nem finomítunk)
+        // Az SVG határai (egyelőre maradnak, amíg le nem csekkolod a pötty helyét)
         var northWest = [47.1050, 17.1500]; 
         var southEast = [46.6600, 18.1450];
         var bounds = [northWest, southEast];
@@ -32,12 +32,12 @@
             zoomSnap: 0.1
         }).fitBounds(bounds);
 
-        // Az SVG réteg
+        // Az SVG réteg hozzáadása
         L.imageOverlay('balaton.svg', bounds).addTo(map);
 
-        // --- FIX POZÍCIÓ: SIÓFOKI KIKÖTŐ MÓLÓ VÉGE ---
-        var testLat = 46.91612;
-        var testLon = 18.04618;
+        // --- FIX POZÍCIÓ: TIHANYI RÉV MÓLÓ VÉGE ---
+        var testLat = 46.88850;
+        var testLon = 17.89270;
 
         var marker = L.circleMarker([testLat, testLon], {
             radius: 10,
@@ -48,14 +48,14 @@
         }).addTo(map);
 
         document.getElementById('hud').innerHTML = 
-            "HELYSZÍN: SIÓFOKI KIKÖTŐ MÓLÓ<br>" +
+            "HELYSZÍN: TIHANYI RÉV<br>" +
             "LAT: " + testLat.toFixed(5) + "<br>" +
             "LON: " + testLon.toFixed(5);
 
-        // Odaugrunk a móló végére
+        // Odaugrunk a Tihanyi Révhez
         map.setView([testLat, testLon], 17);
 
-        // Kattintás funkció marad az ellenőrzéshez
+        // Továbbra is tudsz kattintani az ellenőrzéshez
         map.on('click', function(e) {
             marker.setLatLng(e.latlng);
             document.getElementById('hud').innerHTML = 
