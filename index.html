@@ -21,8 +21,8 @@
     <div class="hud" id="hud">TESZT ÜZEMMÓD</div>
     <div id="map"></div>
 
-   <script>
-        // Az SVG határai (egyelőre maradnak, amíg le nem csekkolod a pötty helyét)
+  <script>
+        // Az SVG határai (referencia pontok a kifeszítéshez)
         var northWest = [47.1050, 17.1500]; 
         var southEast = [46.6600, 18.1450];
         var bounds = [northWest, southEast];
@@ -32,12 +32,12 @@
             zoomSnap: 0.1
         }).fitBounds(bounds);
 
-        // Az SVG réteg hozzáadása
+        // Az SVG réteg betöltése
         L.imageOverlay('balaton.svg', bounds).addTo(map);
 
-        // --- FIX POZÍCIÓ: TIHANYI RÉV MÓLÓ VÉGE ---
-        var testLat = 46.88850;
-        var testLon = 17.89270;
+        // --- FIX POZÍCIÓ: TIHANYI RÉV ÉSZAKI MÓLÓVÉG ---
+        var testLat = 46.88872;
+        var testLon = 17.89172;
 
         var marker = L.circleMarker([testLat, testLon], {
             radius: 10,
@@ -48,14 +48,14 @@
         }).addTo(map);
 
         document.getElementById('hud').innerHTML = 
-            "HELYSZÍN: TIHANYI RÉV<br>" +
+            "HELYSZÍN: TIHANY ÉSZAKI MÓLÓ<br>" +
             "LAT: " + testLat.toFixed(5) + "<br>" +
             "LON: " + testLon.toFixed(5);
 
-        // Odaugrunk a Tihanyi Révhez
-        map.setView([testLat, testLon], 17);
+        // Odaugrunk a megadott pontra
+        map.setView([testLat, testLon], 18);
 
-        // Továbbra is tudsz kattintani az ellenőrzéshez
+        // Kattintás funkció az ellenőrzéshez
         map.on('click', function(e) {
             marker.setLatLng(e.latlng);
             document.getElementById('hud').innerHTML = 
@@ -64,5 +64,6 @@
                 "LON: " + e.latlng.lng.toFixed(5);
         });
     </script>
+
 </body>
 </html>
