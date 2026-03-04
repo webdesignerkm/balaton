@@ -1,7 +1,7 @@
 <!DOCTYPE html>
 <html>
 <head>
-    <title>Balaton Pro Navigáció</title>
+    <title>Balaton Teszt - Siófok</title>
     <meta charset="utf-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
     <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" />
@@ -9,16 +9,22 @@
     <style>
         body { margin: 0; padding: 0; }
         #map { height: 100vh; width: 100vw; background: #b3d1ff; }
-        .hud { position: absolute; top: 10px; right: 10px; background: rgba(0,0,0,0.7); color: lime; padding: 10px; font-family: monospace; z-index: 1000; border-radius: 5px; pointer-events: none; }
+        .hud { 
+            position: absolute; top: 10px; right: 10px; 
+            background: rgba(0,0,0,0.8); color: #00ff00; 
+            padding: 12px; font-family: 'Courier New', monospace; 
+            z-index: 1000; border-radius: 8px; border: 1px solid #00ff00;
+        }
     </style>
 </head>
 <body>
-    <div class="hud" id="hud">GPS keresése...</div>
+    <div class="hud" id="hud">TESZT ÜZEMMÓD</div>
     <div id="map"></div>
 
     <script>
-        // A Te méréseid alapján számolt "kifeszített" határok
-        var northWest = [47.1050, 17.1500];
+        // Ezek a koordináták határozzák meg, hol van az SVG bal-felső és jobb-alsó sarka
+        // Ha a térkép el van csúszva, ezeket a számokat kell picit finomítani
+        var northWest = [47.1050, 17.1500]; 
         var southEast = [46.6600, 18.1450];
         var bounds = [northWest, southEast];
 
@@ -27,38 +33,39 @@
             zoomSnap: 0.1
         }).fitBounds(bounds);
 
-        // Az SVG réteg betöltése
+        // Az SVG réteg hozzáadása
         L.imageOverlay('balaton.svg', bounds).addTo(map);
 
-        // FIX POZÍCIÓ BEÁLLÍTÁSA (Siófok, Aranypart/Móló környéke)
-        // Ezt a koordinátát írd át, ha máshol szeretnél "állni" a teszthez
-        var fixLat = 46.9140; 
-        var fixLon = 18.0510;
+        // --- FIX POZÍCIÓ TESZTELÉSHEZ ---
+        // Siófok, Hajóállomás környéke
+        var testLat = 46.91500;
+        var testLon = 18.05000;
 
-        // Saját pozíció marker létrehozása a fix helyen
-        var marker = L.circleMarker([fixLat, fixLon], {
-            radius: 9, 
-            fillColor: "#ff0000", // Pirosra állítottam, hogy jobban lásd a teszt alatt
-            color: "#fff", 
-            weight: 3, 
+        var marker = L.circleMarker([testLat, testLon], {
+            radius: 10,
+            fillColor: "#ff0000", // Piros pötty a teszthez
+            color: "#ffffff",
+            weight: 3,
             fillOpacity: 1
         }).addTo(map);
 
-        // A HUD kijelzőt is frissítjük a fix adatokkal
+        // HUD frissítése a fix adatokkal
         document.getElementById('hud').innerHTML = 
-            "TESZT MÓD (FIX)<br>" +
-            "LAT: " + fixLat.toFixed(5) + "<br>" +
-            "LON: " + fixLon.toFixed(5);
+            "FIX PONT: SIÓFOK<br>" +
+            "LAT: " + testLat.toFixed(5) + "<br>" +
+            "LON: " + testLon.toFixed(5);
 
-        // A térképet is oda fókuszáljuk, hogy ne kelljen keresgélni
-        map.setView([fixLat, fixLon], 16);
+        // Odaugrunk a piros pöttyre, hogy rögtön lásd
+        map.setView([testLat, testLon], 15);
 
-        // Debug mód: Kattints és írd be az Illustratorba az eredményt
+        // Interaktív teszt: Ha rákattintasz a térképre, oda ugrik a pötty 
+        // és kiírja a koordinátát. Így ellenőrizheted a stégeket!
         map.on('click', function(e) {
-            console.log("Kattintott hely GPS-e: " + e.latlng.lat + ", " + e.latlng.lng);
-            // Ha rákattintasz valahova, a piros pötty oda ugrik (könnyebb tesztelés)
             marker.setLatLng(e.latlng);
-            document.getElementById('hud').innerHTML = "KATTINTOTT:<br>LAT: " + e.latlng.lat.toFixed(5) + "<br>LON: " + e.latlng.lng.toFixed(5);
+            document.getElementById('hud').innerHTML = 
+                "KIJELÖLT PONT:<br>" +
+                "LAT: " + e.latlng.lat.toFixed(5) + "<br>" +
+                "LON: " + e.latlng.lng.toFixed(5);
         });
     </script>
 </body>
