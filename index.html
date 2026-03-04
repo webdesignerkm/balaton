@@ -1,0 +1,55 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>Balaton Pro Navigáció</title>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" />
+    <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
+    <style>
+        body { margin: 0; padding: 0; }
+        #map { height: 100vh; width: 100vw; background: #b3d1ff; }
+        .hud { position: absolute; top: 10px; right: 10px; background: rgba(0,0,0,0.7); color: lime; padding: 10px; font-family: monospace; z-index: 1000; border-radius: 5px; pointer-events: none; }
+    </style>
+</head>
+<body>
+    <div class="hud" id="hud">GPS keresése...</div>
+    <div id="map"></div>
+
+    <script>
+        // A Te méréseid alapján számolt "kifeszített" határok
+        // Ezek azok a pontok, amikre a te SVG-d (0,0) és (2534,1436) sarkai esnek
+        var northWest = [47.1050, 17.1500];
+        var southEast = [46.6600, 18.1450];
+        var bounds = [northWest, southEast];
+
+        var map = L.map('map', {
+            maxZoom: 22,
+            zoomSnap: 0.1
+        }).fitBounds(bounds);
+
+        // Az SVG réteg
+        L.imageOverlay('balaton.svg', bounds).addTo(map);
+
+        // Saját pozíció marker
+        var marker = L.circleMarker([0,0], {
+            radius: 9, fillColor: "#00ff00", color: "#fff", weight: 3, fillOpacity: 1
+        }).addTo(map);
+
+        // Helymeghatározás frissítése
+        map.locate({setView: false, watch: true, enableHighAccuracy: true});
+
+        map.on('locationfound', function(e) {
+            marker.setLatLng(e.latlng);
+            document.getElementById('hud').innerHTML = 
+                "LAT: " + e.latlng.lat.toFixed(5) + "<br>" +
+                "LON: " + e.latlng.lng.toFixed(5);
+        });
+
+        // Debug mód: Kattints és írd be az Illustratorba az eredményt az ellenőrzéshez
+        map.on('click', function(e) {
+            console.log("GPS ide: " + e.latlng.lat + ", " + e.latlng.lng);
+        });
+    </script>
+</body>
+</html>
