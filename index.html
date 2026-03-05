@@ -20,48 +20,51 @@
 <body>
     <div class="hud" id="hud">TESZT ÜZEMMÓD</div>
     <div id="map"></div>
-
-  <script>
-        // Az SVG határai (referencia pontok a kifeszítéshez)
-        var northWest = [47.1050, 17.1500]; 
-        var southEast = [46.6600, 18.1450];
-        var bounds = [northWest, southEast];
-
+<script>
+        // Alaptérkép beállítása (Siófok/Tihany közé)
         var map = L.map('map', {
-            maxZoom: 22,
-            zoomSnap: 0.1
-        }).fitBounds(bounds);
+            maxZoom: 22
+        }).setView([46.89, 17.95], 12);
 
-        // Az SVG réteg betöltése
-        L.imageOverlay('balaton.svg', bounds).addTo(map);
+        // A GeoJSON stílusa (milyen színű legyen a vonal?)
+        var myStyle = {
+            "color": "#ff7800",
+            "weight": 3,
+            "opacity": 0.65
+        };
 
-        // --- FIX POZÍCIÓ: TIHANYI RÉV ÉSZAKI MÓLÓVÉG ---
-        var testLat = 46.88872;
-        var testLon = 17.89172;
+        // 1. A GeoJSON fájl betöltése
+        fetch('balaton.geojson')
+            .then(function(response) {
+                return response.json();
+            })
+            .then(function(data) {
+                // Ráillesztjük a térképre a vektort
+                L.geoJSON(data, {
+                    style: myStyle
+                }).addTo(map);
+                console.log("GeoJSON sikeresen betöltve!");
+            })
+            .catch(function(error) {
+                console.log("Hiba a GeoJSON betöltésekor: " + error);
+            });
 
-        var marker = L.circleMarker([testLat, testLon], {
-            radius: 10,
-            fillColor: "#ff0000", 
-            color: "#ffffff",
-            weight: 3,
-            fillOpacity: 1
+        // 2. GPS követés (hogy lásd magad a vektoros térképen)
+        var marker = L.circleMarker([0,0], {
+            radius: 8, fillColor: "#007bff", color: "#fff", weight: 2, fillOpacity: 1
         }).addTo(map);
 
-        document.getElementById('hud').innerHTML = 
-            "HELYSZÍN: TIHANY ÉSZAKI MÓLÓ<br>" +
-            "LAT: " + testLat.toFixed(5) + "<br>" +
-            "LON: " + testLon.toFixed(5);
+        map.locate({setView: false, watch: true, enableHighAccuracy: true});
 
-        // Odaugrunk a megadott pontra
-        map.setView([testLat, testLon], 18);
-
-        // Kattintás funkció az ellenőrzéshez
-        map.on('click', function(e) {
+        map.on('locationfound', function(e) {
             marker.setLatLng(e.latlng);
             document.getElementById('hud').innerHTML = 
-                "KIJELÖLT PONT:<br>" +
-                "LAT: " + e.latlng.lat.toFixed(5) + "<br>" +
-                "LON: " + e.latlng.lng.toFixed(5);
+                "GPS AKTÍV<br>LAT: " + e.latlng.lat.toFixed(5) + "<br>LON: " + e.latlng.lng.toFixed(5);
+        });
+
+        // Kattintásra koordináta (ellenőrzéshez)
+        map.on('click', function(e) {
+            console.log("Kattintott GPS: " + e.latlng.lat + ", " + e.latlng.lng);
         });
     </script>
 
