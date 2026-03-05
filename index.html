@@ -21,33 +21,54 @@
     <div class="hud" id="hud">TESZT ÜZEMMÓD</div>
     <div id="map"></div>
 
-   <script>
-        // Ez a két pont a "horgony". 
-        // A te mérésed Tihanynál: 46.88872, 17.89172
-        // Ehhez igazítjuk az SVG keretét.
-        
-        var northWest = [47.1050, 17.1500]; 
-        var southEast = [46.6600, 18.1450];
-        var bounds = [northWest, southEast];
+  <script>
+    // A számításaim alapján a Te SVG-dhez ezek a pontos határok kellenek, 
+    // hogy a mólód a helyére kerüljön:
+    var northWest = [47.11451, 17.16432]; 
+    var southEast = [46.66951, 18.15932];
+    var bounds = [northWest, southEast];
 
-        var map = L.map('map', { maxZoom: 22 }).fitBounds(bounds);
+    var map = L.map('map', {
+        maxZoom: 22,
+        zoomSnap: 0.1
+    }).fitBounds(bounds);
 
-        // Az SVG betöltése
-        L.imageOverlay('balaton.svg', bounds).addTo(map);
+    // Az SVG réteg betöltése
+    L.imageOverlay('balaton.svg', bounds).addTo(map);
 
-        // FIX KÉK PÖTTY (A valóság)
-        var tihanyGPS = [46.88872, 17.89172];
-        L.circleMarker(tihanyGPS, {
-            radius: 8, fillColor: "#007bff", color: "#fff", weight: 2, fillOpacity: 1
-        }).addTo(map).bindPopup("Tihanyi Rév móló vége (GPS)").openPopup();
+    // --- ELLENŐRZŐ PONT (Tihanyi móló) ---
+    var tihanyGPS = [46.88872, 17.89172];
+    var marker = L.circleMarker(tihanyGPS, {
+        radius: 8,
+        fillColor: "#00ff00", // Zöld pötty = Valódi GPS hely
+        color: "#ffffff",
+        weight: 2,
+        fillOpacity: 1
+    }).addTo(map).bindPopup("Tihanyi Rév (Valóság)");
 
-        // HUD - Itt fogod látni, hova kattintasz az SVG-n
-        map.on('click', function(e) {
-            document.getElementById('hud').innerHTML = 
-                "SVG PONT:<br>LAT: " + e.latlng.lat.toFixed(6) + "<br>LON: " + e.latlng.lng.toFixed(6);
-            console.log("Kattintott koordináta: " + e.latlng.lat + ", " + e.latlng.lng);
-        });
-    </script>
+    // --- VALÓDI GPS BEKAPCSOLÁSA ---
+    // Ez mutatja majd, hol vagy Te a vízen
+    var userMarker = L.circleMarker([0,0], {
+        radius: 10, fillColor: "#007bff", color: "#fff", weight: 3, fillOpacity: 1
+    }).addTo(map);
+
+    map.locate({setView: false, watch: true, enableHighAccuracy: true});
+
+    map.on('locationfound', function(e) {
+        userMarker.setLatLng(e.latlng);
+        document.getElementById('hud').innerHTML = 
+            "GPS AKTÍV<br>" +
+            "LAT: " + e.latlng.lat.toFixed(5) + "<br>" +
+            "LON: " + e.latlng.lng.toFixed(5);
+    });
+
+    // Debug: Ha kattintasz, kiírja a koordinátát az ellenőrzéshez
+    map.on('click', function(e) {
+        console.log("Kattintott hely: " + e.latlng.lat + ", " + e.latlng.lng);
+        document.getElementById('hud').innerHTML = 
+            "PONT ELLENŐRZÉSE:<br>LAT: " + e.latlng.lat.toFixed(5) + "<br>LON: " + e.latlng.lng.toFixed(5);
+    });
+</script>
 
 </body>
 </html>
