@@ -21,57 +21,30 @@
     <div class="hud" id="hud">TESZT ÜZEMMÓD</div>
     <div id="map"></div>
 
-    <script>
-        // Alaptérkép - Tihanyra fókuszálva
-        var map = L.map('map', {
-            maxZoom: 22,
-            zoomSnap: 0.1
-        }).setView([46.8887, 17.8917], 17);
+   <script>
+        // Ez a két pont a "horgony". 
+        // A te mérésed Tihanynál: 46.88872, 17.89172
+        // Ehhez igazítjuk az SVG keretét.
+        
+        var northWest = [47.1050, 17.1500]; 
+        var southEast = [46.6600, 18.1450];
+        var bounds = [northWest, southEast];
 
-        // A GeoJSON (a te SVG-dből konvertált vonalak) stílusa
-        var myStyle = {
-            "color": "#ff3300", // Erősebb narancsvörös, hogy jól látszódjon
-            "weight": 2,
-            "opacity": 1
-        };
+        var map = L.map('map', { maxZoom: 22 }).fitBounds(bounds);
 
-        // 1. A GeoJSON betöltése a GitHubról
-        fetch('balaton.geojson')
-            .then(response => response.json())
-            .then(data => {
-                L.geoJSON(data, {
-                    style: myStyle
-                }).addTo(map);
-                console.log("A vektoros adatok betöltve!");
-            })
-            .catch(err => console.error("Hiba a GeoJSON betöltésekor:", err));
+        // Az SVG betöltése
+        L.imageOverlay('balaton.svg', bounds).addTo(map);
 
-        // 2. FIX TESZTPONT: Tihanyi Rév északi mólócsúcs
-        // 46°53'19.4"N 17°53'30.2"E
-        var testLat = 46.88872;
-        var testLon = 17.89172;
+        // FIX KÉK PÖTTY (A valóság)
+        var tihanyGPS = [46.88872, 17.89172];
+        L.circleMarker(tihanyGPS, {
+            radius: 8, fillColor: "#007bff", color: "#fff", weight: 2, fillOpacity: 1
+        }).addTo(map).bindPopup("Tihanyi Rév móló vége (GPS)").openPopup();
 
-        var marker = L.circleMarker([testLat, testLon], {
-            radius: 10,
-            fillColor: "#007bff", // Kék pötty a teszthez
-            color: "#fff",
-            weight: 3,
-            fillOpacity: 1
-        }).addTo(map);
-
-        // HUD frissítése
-        document.getElementById('hud').innerHTML = 
-            "TESZT: TIHANY ÉSZAKI MÓLÓ<br>" +
-            "LAT: " + testLat.toFixed(5) + "<br>" +
-            "LON: " + testLon.toFixed(5);
-
-        // Kattintás funkció (hogy tudd tesztelni a többi stéget is)
+        // HUD - Itt fogod látni, hova kattintasz az SVG-n
         map.on('click', function(e) {
-            marker.setLatLng(e.latlng);
             document.getElementById('hud').innerHTML = 
-                "KIJELÖLT GPS:<br>" +
-                "LAT: " + e.latlng.lat.toFixed(5) + "<br>" +
-                "LON: " + e.latlng.lng.toFixed(5);
+                "SVG PONT:<br>LAT: " + e.latlng.lat.toFixed(6) + "<br>LON: " + e.latlng.lng.toFixed(6);
             console.log("Kattintott koordináta: " + e.latlng.lat + ", " + e.latlng.lng);
         });
     </script>
