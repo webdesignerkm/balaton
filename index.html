@@ -1,83 +1,71 @@
 <!DOCTYPE html>
 <html>
 <head>
-    <title>Balaton Pro - OSM Navigáció</title>
+    <title>Balaton Teszt - Siófok</title>
     <meta charset="utf-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
     <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" />
     <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
     <style>
         body { margin: 0; padding: 0; }
-        #map { height: 100vh; width: 100vw; }
+        #map { height: 100vh; width: 100vw; background: #b3d1ff; }
         .hud { 
             position: absolute; top: 10px; right: 10px; 
             background: rgba(0,0,0,0.8); color: #00ff00; 
-            padding: 10px; z-index: 1000; border-radius: 5px; 
-            font-family: monospace; border: 1px solid #00ff00;
+            padding: 12px; font-family: 'Courier New', monospace; 
+            z-index: 1000; border-radius: 8px; border: 1px solid #00ff00;
         }
     </style>
 </head>
 <body>
-    <div class="hud" id="hud">Műholdas jel keresése...</div>
+    <div class="hud" id="hud">TESZT ÜZEMMÓD</div>
     <div id="map"></div>
 
-    <script>
-        // 1. OPENSTREETMAP INICIALIZÁLÁSA
-        // A térképet Tihany környékére állítjuk alapból
-        var map = L.map('map').setView([46.8887, 17.8917], 12);
+ <script>
+    // A beküldött SVG pont (46.88765, 17.84660) és a 
+    // valós GPS (46.88872, 17.89172) közötti különbséggel eltolt határok:
+    
+    var northWest = [47.10607, 17.19512]; 
+    var southEast = [46.66107, 18.19012];
+    var bounds = [northWest, southEast];
 
-        L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
-            maxZoom: 19,
-            attribution: '© OpenStreetMap közreműködők'
-        }).addTo(map);
+    var map = L.map('map', {
+        maxZoom: 22,
+        zoomSnap: 0.1
+    }).fitBounds(bounds);
 
-        // 2. ELTOLÁS KISZÁMÍTÁSA (Offset)
-        // A te fájlodban Tihany ~108.78, 8.72 környékén van. 
-        // A valóságban: 17.89, 46.88.
-        var lngDiff = 17.89172 - 108.78141; 
-        var latDiff = 46.88872 - 8.72651;
+    // Az SVG réteg
+    L.imageOverlay('balaton.svg', bounds).addTo(map);
 
-        // 3. GEOJSON BETÖLTÉSE ÉS TRANSZFORMÁCIÓJA
-        fetch('balaton.geojson')
-            .then(res => res.json())
-            .then(data => {
-                data.features.forEach(feature => {
-                    if (feature.geometry.type === "LineString") {
-                        feature.geometry.coordinates = feature.geometry.coordinates.map(c => [
-                            c[0] + lngDiff, 
-                            c[1] + latDiff
-                        ]);
-                    } else if (feature.geometry.type === "MultiLineString") {
-                        feature.geometry.coordinates = feature.geometry.coordinates.map(line => 
-                            line.map(c => [c[0] + lngDiff, c[1] + latDiff])
-                        );
-                    }
-                });
+    // --- ELLENŐRZŐ PONT (Tihanyi Rév északi móló) ---
+    var tihanyGPS = [46.88872, 17.89172];
+    L.circleMarker(tihanyGPS, {
+        radius: 8,
+        fillColor: "#00ff00", // Zöld = Valóság
+        color: "#ffffff",
+        weight: 2,
+        fillOpacity: 1
+    }).addTo(map);
 
-                L.geoJSON(data, {
-                    style: { color: "#ff3300", weight: 3, opacity: 0.8 }
-                }).addTo(map);
-                
-                console.log("OSM integráció és vektor eltolás kész!");
-            });
+    // --- VALÓDI GPS ---
+    var marker = L.circleMarker([0,0], {
+        radius: 10, fillColor: "#007bff", color: "#fff", weight: 3, fillOpacity: 1
+    }).addTo(map);
 
-        // 4. GPS POZÍCIÓ KÖVETÉSE
-        var userMarker = L.circleMarker([0,0], {
-            radius: 9, fillColor: "#007bff", color: "#fff", weight: 3, fillOpacity: 1
-        }).addTo(map);
+    map.locate({setView: false, watch: true, enableHighAccuracy: true});
 
-        map.on('locationfound', function(e) {
-            userMarker.setLatLng(e.latlng);
-            document.getElementById('hud').innerHTML = 
-                "GPS AKTÍV<br>LAT: " + e.latlng.lat.toFixed(5) + "<br>LON: " + e.latlng.lng.toFixed(5);
-        });
+    map.on('locationfound', function(e) {
+        marker.setLatLng(e.latlng);
+        document.getElementById('hud').innerHTML = 
+            "GPS POZÍCIÓ:<br>LAT: " + e.latlng.lat.toFixed(5) + "<br>LON: " + e.latlng.lng.toFixed(5);
+    });
 
-        map.locate({setView: false, watch: true, enableHighAccuracy: true});
-
-        // Debug kattintáshoz
-        map.on('click', function(e) {
-            console.log("Kattintott koordináta az OSM térképen: " + e.latlng.lat + ", " + e.latlng.lng);
-        });
-    </script>
+    // Debug kattintás
+    map.on('click', function(e) {
+        console.log("Kattintott hely: " + e.latlng.lat + ", " + e.latlng.lng);
+        document.getElementById('hud').innerHTML = 
+            "ELLENŐRZÉS:<br>LAT: " + e.latlng.lat.toFixed(5) + "<br>LON: " + e.latlng.lng.toFixed(5);
+    });
+</script>
 </body>
 </html>
