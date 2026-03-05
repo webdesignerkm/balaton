@@ -1,7 +1,7 @@
 <!DOCTYPE html>
 <html>
 <head>
-    <title>Balaton Teszt - Siófok</title>
+    <title>Balaton Teszt - Badacsony & Tihany</title>
     <meta charset="utf-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
     <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" />
@@ -18,13 +18,11 @@
     </style>
 </head>
 <body>
-    <div class="hud" id="hud">TESZT ÜZEMMÓD</div>
+    <div class="hud" id="hud">BADACSONY TESZT</div>
     <div id="map"></div>
 
- <script>
-    // A beküldött SVG pont (46.88765, 17.84660) és a 
-    // valós GPS (46.88872, 17.89172) közötti különbséggel eltolt határok:
-    
+<script>
+    // Kalibrált határok az SVG-hez
     var northWest = [47.10607, 17.19512]; 
     var southEast = [46.66107, 18.19012];
     var bounds = [northWest, southEast];
@@ -34,20 +32,32 @@
         zoomSnap: 0.1
     }).fitBounds(bounds);
 
-    // Az SVG réteg
-    L.imageOverlay('balaton.svg', bounds).addTo(map);
-
-    // --- ELLENŐRZŐ PONT (Tihanyi Rév északi móló) ---
-    var tihanyGPS = [46.88872, 17.89172];
-    L.circleMarker(tihanyGPS, {
-        radius: 8,
-        fillColor: "#00ff00", // Zöld = Valóság
-        color: "#ffffff",
-        weight: 2,
-        fillOpacity: 1
+    // 1. OPENSTREETMAP INTEGRÁCIÓ (Az igazi térkép alulra)
+    L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
+        maxZoom: 19,
+        attribution: '© OpenStreetMap'
     }).addTo(map);
 
-    // --- VALÓDI GPS ---
+    // 2. A TE RAJZOD (SVG Overlay - átlátszósággal, hogy lásd az alatta lévő térképet)
+    L.imageOverlay('balaton.svg', bounds, { opacity: 0.6 }).addTo(map);
+
+    // --- 1. ELLENŐRZŐ PONT: TIHANY ---
+    var tihanyGPS = [46.88872, 17.89172];
+    L.circleMarker(tihanyGPS, {
+        radius: 8, fillColor: "#00ff00", color: "#ffffff", weight: 2, fillOpacity: 1
+    }).addTo(map).bindPopup("Tihanyi Rév");
+
+    // --- 2. ELLENŐRZŐ PONT: BADACSONY (ÚJ) ---
+    var badacsonyGPS = [46.78470, 17.50110];
+    L.circleMarker(badacsonyGPS, {
+        radius: 10,
+        fillColor: "#ffff00", // Sárga = Új tesztpont
+        color: "#000000",
+        weight: 3,
+        fillOpacity: 1
+    }).addTo(map).bindPopup("Badacsonyi kikötő vége");
+
+    // --- VALÓDI GPS POZÍCIÓ ---
     var marker = L.circleMarker([0,0], {
         radius: 10, fillColor: "#007bff", color: "#fff", weight: 3, fillOpacity: 1
     }).addTo(map);
@@ -60,7 +70,6 @@
             "GPS POZÍCIÓ:<br>LAT: " + e.latlng.lat.toFixed(5) + "<br>LON: " + e.latlng.lng.toFixed(5);
     });
 
-    // Debug kattintás
     map.on('click', function(e) {
         console.log("Kattintott hely: " + e.latlng.lat + ", " + e.latlng.lng);
         document.getElementById('hud').innerHTML = 
