@@ -21,11 +21,12 @@
     <div class="hud" id="hud">TESZT ÜZEMMÓD</div>
     <div id="map"></div>
 
-  <script>
-    // A számításaim alapján a Te SVG-dhez ezek a pontos határok kellenek, 
-    // hogy a mólód a helyére kerüljön:
-    var northWest = [47.11451, 17.16432]; 
-    var southEast = [46.66951, 18.15932];
+ <script>
+    // A beküldött SVG pont (46.88765, 17.84660) és a 
+    // valós GPS (46.88872, 17.89172) közötti különbséggel eltolt határok:
+    
+    var northWest = [47.10607, 17.19512]; 
+    var southEast = [46.66107, 18.19012];
     var bounds = [northWest, southEast];
 
     var map = L.map('map', {
@@ -33,42 +34,38 @@
         zoomSnap: 0.1
     }).fitBounds(bounds);
 
-    // Az SVG réteg betöltése
+    // Az SVG réteg
     L.imageOverlay('balaton.svg', bounds).addTo(map);
 
-    // --- ELLENŐRZŐ PONT (Tihanyi móló) ---
+    // --- ELLENŐRZŐ PONT (Tihanyi Rév északi móló) ---
     var tihanyGPS = [46.88872, 17.89172];
-    var marker = L.circleMarker(tihanyGPS, {
+    L.circleMarker(tihanyGPS, {
         radius: 8,
-        fillColor: "#00ff00", // Zöld pötty = Valódi GPS hely
+        fillColor: "#00ff00", // Zöld = Valóság
         color: "#ffffff",
         weight: 2,
         fillOpacity: 1
-    }).addTo(map).bindPopup("Tihanyi Rév (Valóság)");
+    }).addTo(map);
 
-    // --- VALÓDI GPS BEKAPCSOLÁSA ---
-    // Ez mutatja majd, hol vagy Te a vízen
-    var userMarker = L.circleMarker([0,0], {
+    // --- VALÓDI GPS ---
+    var marker = L.circleMarker([0,0], {
         radius: 10, fillColor: "#007bff", color: "#fff", weight: 3, fillOpacity: 1
     }).addTo(map);
 
     map.locate({setView: false, watch: true, enableHighAccuracy: true});
 
     map.on('locationfound', function(e) {
-        userMarker.setLatLng(e.latlng);
+        marker.setLatLng(e.latlng);
         document.getElementById('hud').innerHTML = 
-            "GPS AKTÍV<br>" +
-            "LAT: " + e.latlng.lat.toFixed(5) + "<br>" +
-            "LON: " + e.latlng.lng.toFixed(5);
+            "GPS POZÍCIÓ:<br>LAT: " + e.latlng.lat.toFixed(5) + "<br>LON: " + e.latlng.lng.toFixed(5);
     });
 
-    // Debug: Ha kattintasz, kiírja a koordinátát az ellenőrzéshez
+    // Debug kattintás
     map.on('click', function(e) {
         console.log("Kattintott hely: " + e.latlng.lat + ", " + e.latlng.lng);
         document.getElementById('hud').innerHTML = 
-            "PONT ELLENŐRZÉSE:<br>LAT: " + e.latlng.lat.toFixed(5) + "<br>LON: " + e.latlng.lng.toFixed(5);
+            "ELLENŐRZÉS:<br>LAT: " + e.latlng.lat.toFixed(5) + "<br>LON: " + e.latlng.lng.toFixed(5);
     });
 </script>
-
 </body>
 </html>
