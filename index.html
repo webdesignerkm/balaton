@@ -1,91 +1,81 @@
 <!DOCTYPE html>
 <html>
 <head>
-    <title>Balaton Teszt - Badacsony & Tihany</title>
+    <title>Balaton Teszt - Badacsony</title>
     <meta charset="utf-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
     <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" />
     <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
     <style>
         body { margin: 0; padding: 0; }
+        /* A háttérszín marad a kért kék */
         #map { height: 100vh; width: 100vw; background: #b3d1ff; }
         .hud { 
             position: absolute; top: 10px; right: 10px; 
-            background: rgba(0,0,0,0.8); color: #00ff00; 
+            background: rgba(0,0,0,0.8); color: #FFFFFF; 
             padding: 12px; font-family: 'Courier New', monospace; 
             z-index: 1000; border-radius: 8px; border: 1px solid #00ff00;
         }
     </style>
 </head>
 <body>
-    <div class="hud" id="hud">movacskatyas</div>
+    <div class="hud" id="hud">BADACSONY TESZT ÜZEM</div>
     <div id="map"></div>
 
 <script>
-   // 1. Térkép inicializálása - Badacsonyra nézünk a teszthez
-    var map = L.map('map').setView([46.78470, 17.50110], 14);
+    // A korábban számolt határok az SVG-hez
+    var northWest = [47.10607, 17.19512]; 
+    var southEast = [46.66107, 18.19012];
+    var bounds = [northWest, southEast];
 
-    // OpenStreetMap alaptérkép (ez lesz a viszonyítási alap)
-    L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
-        maxZoom: 19,
-        attribution: '© OpenStreetMap'
-    }).addTo(map);
+    var map = L.map('map', {
+        maxZoom: 22,
+        zoomSnap: 0.1,
+        attributionControl: false // Kikapcsoljuk a felesleges feliratokat
+    }).fitBounds(bounds);
 
-    // 2. ELTOLÁSI ÉRTÉKEK (Offset)
-    // A fájlod eleje alapján kiszámolt különbség:
-    var lngDiff = 17.89172 - 108.78141; 
-    var latDiff = 46.88872 - 8.72651;
+    // Az SVG réteg betöltése (openstreetmap nélkül)
+    L.imageOverlay('balaton.svg', bounds).addTo(map);
 
-    // 3. GEOJSON BETÖLTÉSE ÉS ÁTSZÁMÍTÁSA
-    fetch('balaton.geojson')
-        .then(res => res.json())
-        .then(data => {
-            data.features.forEach(feature => {
-                // Minden egyes koordináta-párt eltolunk a megfelelő helyre
-                if (feature.geometry.type === "LineString") {
-                    feature.geometry.coordinates = feature.geometry.coordinates.map(c => [
-                        c[0] + lngDiff, 
-                        c[1] + latDiff
-                    ]);
-                } else if (feature.geometry.type === "MultiLineString") {
-                    feature.geometry.coordinates = feature.geometry.coordinates.map(line => 
-                        line.map(c => [c[0] + lngDiff, c[1] + latDiff])
-                    );
-                }
-            });
-
-            // Kirajzoljuk a javított vonalakat
-            L.geoJSON(data, {
-                style: { 
-                    color: "#ff3300", // Erős piros vonal
-                    weight: 3, 
-                    opacity: 0.9 
-                }
-            }).addTo(map);
-            
-            console.log("GeoJSON sikeresen a helyére került!");
-        })
-        .catch(err => console.error("Hiba történt:", err));
-
-    // 4. FIX TESZTPONT: BADACSONYI MÓLÓ VÉGE (Sárga)
-    var badacsonyGPS = [46.78470, 17.50110];
-    L.circleMarker(badacsonyGPS, {
-        radius: 10,
-        fillColor: "#ffff00", 
-        color: "#000",
+    // --- 1. ELLENŐRZŐ PONT (Tihanyi Rév - ZÖLD) ---
+    var tihanyGPS = [46.88872, 17.89172];
+    L.circleMarker(tihanyGPS, {
+        radius: 8,
+        fillColor: "#00ff00",
+        color: "#ffffff",
         weight: 2,
         fillOpacity: 1
-    }).addTo(map).bindPopup("Badacsony GPS Teszt");
+    }).addTo(map).bindPopup("Tihanyi Rév (Zöld)");
 
-    // 5. SAJÁT GPS POZÍCIÓ (Kék)
+    // --- 2. ELLENŐRZŐ PONT (Badacsonyi kikötő móló vége - SÁRGA) ---
+    // Koordináta: 46.78470, 17.50110
+    var badacsonyGPS = [46.78470, 17.50110];
+    L.circleMarker(badacsonyGPS, {
+        radius: 8,
+        fillColor: "#ffff00", // Sárga tesztpont
+        color: "#000000",
+        weight: 2,
+        fillOpacity: 1
+    }).addTo(map).bindPopup("Badacsonyi móló (Sárga)");
+
+    // --- VALÓDI GPS POZÍCIÓ (KÉK) ---
     var marker = L.circleMarker([0,0], {
-        radius: 8, fillColor: "#007bff", color: "#fff", weight: 2, fillOpacity: 1
+        radius: 10, fillColor: "#007bff", color: "#fff", weight: 3, fillOpacity: 1
     }).addTo(map);
 
     map.locate({setView: false, watch: true, enableHighAccuracy: true});
+
     map.on('locationfound', function(e) {
         marker.setLatLng(e.latlng);
-        document.getElementById('hud').innerHTML = "GPS AKTÍV - BADACSONY TESZT";
+        document.getElementById('hud').innerHTML = 
+            "GPS POZÍCIÓ:<br>LAT: " + e.latlng.lat.toFixed(5) + "<br>LON: " + e.latlng.lng.toFixed(5);
+    });
+
+    // Debug kattintás koordináta kinyeréséhez
+    map.on('click', function(e) {
+        console.log("Kattintott hely: " + e.latlng.lat + ", " + e.latlng.lng);
+        document.getElementById('hud').innerHTML = 
+            "ELLENŐRZÉS:<br>LAT: " + e.latlng.lat.toFixed(5) + "<br>LON: " + e.latlng.lng.toFixed(5);
     });
 </script>
 </body>
