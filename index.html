@@ -1,82 +1,70 @@
 <!DOCTYPE html>
-<html>
+<html lang="hu">
 <head>
-    <title>Balaton Teszt - Badacsony</title>
-    <meta charset="utf-8" />
-    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>ESP32 Balaton GPS Teszt</title>
+    
     <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" />
     <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
+
     <style>
         body { margin: 0; padding: 0; }
-        /* A háttérszín marad a kért kék */
-        #map { height: 100vh; width: 100vw; background: #b3d1ff; }
-        .hud { 
-            position: absolute; top: 10px; right: 10px; 
-            background: rgba(0,0,0,0.8); color: #FFFFFF; 
-            padding: 12px; font-family: 'Courier New', monospace; 
-            z-index: 1000; border-radius: 8px; border: 1px solid #00ff00;
+        #map { height: 100vh; width: 100%; background: #f0f0f0; }
+        .info-box {
+            position: absolute; top: 10px; right: 10px; z-index: 1000;
+            background: white; padding: 10px; border-radius: 5px; box-shadow: 0 0 15px rgba(0,0,0,0.2);
+            font-family: sans-serif;
         }
     </style>
 </head>
 <body>
-    <div class="hud" id="hud">BADACSONY TESZT ÜZEM</div>
+
+    <div class="info-box">
+        <b>ESP32 Hajó Pozíció</b><br>
+        Státusz: <span id="status">GeoJSON betöltése...</span>
+    </div>
     <div id="map"></div>
 
-<script>
-    // A korábban számolt határok az SVG-hez
-    var northWest = [47.10607, 17.19512]; 
-    var southEast = [46.66107, 18.19012];
-    var bounds = [northWest, southEast];
+    <script>
+        // 1. Térkép inicializálása (Középpont: Tihany környéke)
+        var map = L.map('map').setView([46.88, 17.89], 11);
 
-    var map = L.map('map', {
-        maxZoom: 22,
-        zoomSnap: 0.1,
-        attributionControl: false // Kikapcsoljuk a felesleges feliratokat
-    }).fitBounds(bounds);
+        // 2. A letöltött GeoJSON réteg betöltése (A Balaton medre)
+        fetch('export-3.geojson')
+            .then(response => response.json())
+            .then(geojsonData => {
+                L.geoJSON(geojsonData, {
+                    style: {
+                        color: "#0074D9",    // Partvonal színe
+                        weight: 2,           // Vonalvastagság
+                        fillColor: "#7FDBFF", // Víz színe
+                        fillOpacity: 0.5     // Átlátszóság
+                    }
+                }).addTo(map);
+                document.getElementById('status').innerText = "Hajó követése aktív";
+            })
+            .catch(err => {
+                console.error("Hiba a GeoJSON betöltésekor:", err);
+                document.getElementById('status').innerText = "Hiba: GeoJSON nem található!";
+            });
 
-    // Az SVG réteg betöltése (openstreetmap nélkül)
-    L.imageOverlay('balaton.svg', bounds).addTo(map);
+        // 3. TESZT: Tihanyi rév északi pont (koordináták: 46.9015, 17.8962)
+        // Az ESP32-től kapott koordinátákat ugyanígy [lat, lng] formátumban kell megadni
+        var hlat = 46.9015;
+        var hlng = 17.8962;
 
-    // --- 1. ELLENŐRZŐ PONT (Tihanyi Rév - ZÖLD) ---
-    var tihanyGPS = [46.88872, 17.89172];
-    L.circleMarker(tihanyGPS, {
-        radius: 8,
-        fillColor: "#00ff00",
-        color: "#ffffff",
-        weight: 2,
-        fillOpacity: 1
-    }).addTo(map).bindPopup("Tihanyi Rév (Zöld)");
+        var hajoIcon = L.circleMarker([hlat, hlng], {
+            radius: 8,
+            fillColor: "#FF4136", // Piros pötty
+            color: "#fff",
+            weight: 2,
+            opacity: 1,
+            fillOpacity: 0.8
+        }).addTo(map);
 
-    // --- 2. ELLENŐRZŐ PONT (Badacsonyi kikötő móló vége - SÁRGA) ---
-    // Koordináta: 46.78470, 17.50110
-    var badacsonyGPS = [46.78470, 17.50110];
-    L.circleMarker(badacsonyGPS, {
-        radius: 8,
-        fillColor: "#ffff00", // Sárga tesztpont
-        color: "#000000",
-        weight: 2,
-        fillOpacity: 1
-    }).addTo(map).bindPopup("Badacsonyi móló (Sárga)");
+        hajoIcon.bindPopup("<b>ESP32 Hajó</b><br>Tihanyi Rév (Észak)").openPopup();
 
-    // --- VALÓDI GPS POZÍCIÓ (KÉK) ---
-    var marker = L.circleMarker([0,0], {
-        radius: 10, fillColor: "#007bff", color: "#fff", weight: 3, fillOpacity: 1
-    }).addTo(map);
-
-    map.locate({setView: false, watch: true, enableHighAccuracy: true});
-
-    map.on('locationfound', function(e) {
-        marker.setLatLng(e.latlng);
-        document.getElementById('hud').innerHTML = 
-            "GPS POZÍCIÓ:<br>LAT: " + e.latlng.lat.toFixed(5) + "<br>LON: " + e.latlng.lng.toFixed(5);
-    });
-
-    // Debug kattintás koordináta kinyeréséhez
-    map.on('click', function(e) {
-        console.log("Kattintott hely: " + e.latlng.lat + ", " + e.latlng.lng);
-        document.getElementById('hud').innerHTML = 
-            "ELLENŐRZÉS:<br>LAT: " + e.latlng.lat.toFixed(5) + "<br>LON: " + e.latlng.lng.toFixed(5);
-    });
-</script>
+    </script>
 </body>
 </html>
