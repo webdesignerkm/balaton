@@ -22,58 +22,75 @@
     <div id="map"></div>
 
 <script>
-    // Kalibrált határok az SVG-hez
-    var northWest = [47.10607, 17.19512]; 
-    var southEast = [46.66107, 18.19012];
-    var bounds = [northWest, southEast];
+   // 1. Térkép létrehozása - Badacsonyra fókuszálva a teszthez
+    var map = L.map('map').setView([46.78470, 17.50110], 14);
 
-    var map = L.map('map', {
-        maxZoom: 22,
-        zoomSnap: 0.1
-    }).fitBounds(bounds);
-
-    // 1. OPENSTREETMAP INTEGRÁCIÓ (Az igazi térkép alulra)
+    // OpenStreetMap alaptérkép
     L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
         maxZoom: 19,
         attribution: '© OpenStreetMap'
     }).addTo(map);
 
-    // 2. A TE RAJZOD (SVG Overlay - átlátszósággal, hogy lásd az alatta lévő térképet)
-    L.imageOverlay('balaton.svg', bounds, { opacity: 0.6 }).addTo(map);
+    // 2. ELTOLÁSI ÉRTÉKEK (Az eltolt GeoJSON-odhoz)
+    // Ez a "híd" a fájlod és a valóság között
+    var lngDiff = 17.89172 - 108.78141; 
+    var latDiff = 46.88872 - 8.72651;
 
-    // --- 1. ELLENŐRZŐ PONT: TIHANY ---
-    var tihanyGPS = [46.88872, 17.89172];
-    L.circleMarker(tihanyGPS, {
-        radius: 8, fillColor: "#00ff00", color: "#ffffff", weight: 2, fillOpacity: 1
-    }).addTo(map).bindPopup("Tihanyi Rév");
+    // 3. GEOJSON BETÖLTÉSE ÉS JAVÍTÁSA "RÖPTÉBEN"
+    fetch('balaton.geojson')
+        .then(res => res.json())
+        .then(data => {
+            data.features.forEach(feature => {
+                // Átszámoljuk az összes koordinátát, hogy a Balatonra essenek
+                if (feature.geometry.type === "LineString") {
+                    feature.geometry.coordinates = feature.geometry.coordinates.map(c => [
+                        c[0] + lngDiff, 
+                        c[1] + latDiff
+                    ]);
+                } else if (feature.geometry.type === "MultiLineString") {
+                    feature.geometry.coordinates = feature.geometry.coordinates.map(line => 
+                        line.map(c => [c[0] + lngDiff, c[1] + latDiff])
+                    );
+                }
+            });
 
-    // --- 2. ELLENŐRZŐ PONT: BADACSONY (ÚJ) ---
+            // Kirajzoljuk a javított vonalakat
+            L.geoJSON(data, {
+                style: { 
+                    color: "#ff3300", 
+                    weight: 3, 
+                    opacity: 0.9 
+                }
+            }).addTo(map);
+            
+            console.log("GeoJSON sikeresen eltolva és betöltve!");
+        })
+        .catch(err => console.error("Hiba a betöltéskor:", err));
+
+    // 4. FIX TESZTPONT: BADACSONYI MÓLÓ VÉGE
     var badacsonyGPS = [46.78470, 17.50110];
     L.circleMarker(badacsonyGPS, {
         radius: 10,
-        fillColor: "#ffff00", // Sárga = Új tesztpont
-        color: "#000000",
-        weight: 3,
+        fillColor: "#ffff00", // Sárga tesztpont
+        color: "#000",
+        weight: 2,
         fillOpacity: 1
-    }).addTo(map).bindPopup("Badacsonyi kikötő vége");
+    }).addTo(map).bindPopup("Badacsony GPS Teszt");
 
-    // --- VALÓDI GPS POZÍCIÓ ---
-    var marker = L.circleMarker([0,0], {
-        radius: 10, fillColor: "#007bff", color: "#fff", weight: 3, fillOpacity: 1
+    // 5. VALÓDI GPS HELYZETED
+    var userMarker = L.circleMarker([0,0], {
+        radius: 8, fillColor: "#007bff", color: "#fff", weight: 2, fillOpacity: 1
     }).addTo(map);
 
     map.locate({setView: false, watch: true, enableHighAccuracy: true});
-
     map.on('locationfound', function(e) {
-        marker.setLatLng(e.latlng);
-        document.getElementById('hud').innerHTML = 
-            "GPS POZÍCIÓ:<br>LAT: " + e.latlng.lat.toFixed(5) + "<br>LON: " + e.latlng.lng.toFixed(5);
+        userMarker.setLatLng(e.latlng);
+        document.getElementById('hud').innerHTML = "GPS AKTÍV - BADACSONY TESZT";
     });
 
+    // Kattintásra koordináta (segít a további finomításban)
     map.on('click', function(e) {
-        console.log("Kattintott hely: " + e.latlng.lat + ", " + e.latlng.lng);
-        document.getElementById('hud').innerHTML = 
-            "ELLENŐRZÉS:<br>LAT: " + e.latlng.lat.toFixed(5) + "<br>LON: " + e.latlng.lng.toFixed(5);
+        console.log("Kattintott koordináta: " + e.latlng.lat + ", " + e.latlng.lng);
     });
 </script>
 </body>
